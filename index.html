@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Blood Donation & Emergency Help Finder</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .screen {
+            display: none;
+        }
+        .screen.active {
+            display: block;
+        }
+        /* Custom scrollbar for chat */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid #dc2626;
+            width: 20px;
+            height: 20px;
+            -webkit-animation: spin 1s linear infinite; /* Safari */
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="text-slate-800 h-screen flex flex-col items-center justify-start overflow-hidden">
+
+    <!-- Mobile Container -->
+    <div class="w-full max-w-md h-full bg-white shadow-lg overflow-y-auto relative flex flex-col">
+        
+        <!-- Header -->
+        <header class="bg-white border-b border-slate-200 p-4 sticky top-0 z-10 flex justify-between items-center">
+            <h1 class="text-lg font-bold text-red-600 flex items-center gap-2">
+                <i class="bi bi-heart-pulse-fill"></i> BloodConnect AI
+            </h1>
+            <button id="logout-btn" onclick="logout()" class="hidden text-sm text-slate-500 hover:text-red-600">Logout</button>
+        </header>
+
+        <!-- Screens Container -->
+        <main class="flex-1 p-6 relative">
+            
+            <!-- 1. Login / Signup Screen -->
+            <div id="login-screen" class="screen active">
+                <div class="flex flex-col h-full justify-center space-y-6">
+                    <div class="text-center space-y-2">
+                        <h2 class="text-2xl font-bold text-slate-900">Welcome</h2>
+                        <p class="text-slate-500 text-sm">Sign in to save lives or find help.</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Email Address</label>
+                            <input type="email" id="auth-email" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-red-500 transition-colors" placeholder="name@example.com">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Password</label>
+                            <input type="password" id="auth-password" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-red-500 transition-colors" placeholder="••••••••">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 pt-2">
+                        <button onclick="handleAuth('login')" class="bg-red-600 text-white rounded-lg py-3 text-sm font-medium hover:bg-red-700 transition flex justify-center items-center gap-2">
+                            <span id="login-spinner" class="loader hidden"></span>
+                            Login
+                        </button>
+                        <button onclick="handleAuth('signup')" class="bg-white border border-red-600 text-red-600 rounded-lg py-3 text-sm font-medium hover:bg-red-50 transition flex justify-center items-center gap-2">
+                            <span id="signup-spinner" class="loader hidden"></span>
+                            Create Account
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Home Screen -->
+            <div id="home-screen" class="screen">
+                <div class="space-y-6">
+                    <div class="bg-red-50 rounded-xl p-5 border border-red-100">
+                        <h2 class="text-xl font-bold text-red-900 mb-1">Save a Life Today</h2>
+                        <p class="text-sm text-red-700">Connect with donors or request blood in emergency.</p>
+                    </div>
+
+                    <div class="grid gap-4">
+                        <button onclick="navigate('find-donor-screen')" class="w-full bg-white border border-slate-200 shadow-sm p-4 rounded-xl flex items-center justify-between hover:border-red-500 hover:shadow-md transition group">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                                    <i class="bi bi-search"></i>
+                                </div>
+                                <div class="text-left">
+                                    <h3 class="font-semibold text-slate-900 group-hover:text-red-600">Find Donor</h3>
+                                    <p class="text-xs text-slate-500">Search for blood donors nearby</p>
+                                </div>
+                            </div>
+                            <i class="bi bi-chevron-right text-slate-300"></i>
+                        </button>
+
+                        <button onclick="navigate('emergency-screen')" class="w-full bg-red-600 shadow-lg shadow-red-200 p-4 rounded-xl flex items-center justify-between hover:bg-red-700 transition group text-white">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white">
+                                    <i class="bi bi-exclamation-triangle-fill"></i>
+                                </div>
+                                <div class="text-left">
+                                    <h3 class="font-semibold">Emergency Request</h3>
+                                    <p class="text-xs text-red-100">Broadcast an urgent need</p>
+                                </div>
+                            </div>
+                            <i class="bi bi-chevron-right text-red-200"></i>
+                        </button>
+
+                        <button onclick="navigate('donor-reg-screen')" class="w-full bg-white border border-slate-200 shadow-sm p-4 rounded-xl flex items-center justify-between hover:border-red-500 hover:shadow-md transition group">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center">
+                                    <i class="bi bi-person-plus-fill"></i>
+                                </div>
+                                <div class="text-left">
+                                    <h3 class="font-semibold text-slate-900 group-hover:text-red-600">Register as Donor</h3>
+                                    <p class="text-xs text-slate-500">Join the community</p>
+                                </div>
+                            </div>
+                            <i class="bi bi-chevron-right text-slate-300"></i>
+                        </button>
+                    </div>
+
+                    <button onclick="navigate('chatbot-screen')" class="fixed bottom-6 right-6 w-14 h-14 bg-slate-900 text-white rounded-full shadow-xl flex items-center justify-center hover:scale-105 transition-transform z-20">
+                        <i class="bi bi-chat-dots-fill text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3. Donor Registration Screen -->
+            <div id="donor-reg-screen" class="screen">
+                <div class="mb-6 flex items-center gap-2">
+                    <button onclick="navigate('home-screen')" class="p-2 hover:bg-slate-100 rounded-full"><i class="bi bi-arrow-left"></i></button>
+                    <h2 class="text-xl font-bold">Become a Donor</h2>
+                </div>
+                
+                <form onsubmit="handleDonorSubmit(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Full Name</label>
+                        <input type="text" id="reg-name" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm focus:border-red-500 focus:outline-none">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Blood Group</label>
+                            <select id="reg-blood" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm focus:border-red-500 focus:outline-none">
+                                <option value="">Select</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">City</label>
+                            <select id="reg-city" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm focus:border-red-500 focus:outline-none">
+                                <option value="">Select</option>
+                                <option value="New York">New York</option>
+                                <option value="Los Angeles">Los Angeles</option>
+                                <option value="Chicago">Chicago</option>
+                                <option value="Houston">Houston</option>
+                                <option value="Miami">Miami</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Phone Number</label>
+                        <input type="tel" id="reg-phone" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm focus:border-red-500 focus:outline-none">
+                    </div>
+
+                    <button type="submit" class="w-full bg-red-600 text-white rounded-lg py-3 text-sm font-medium hover:bg-red-700 transition mt-4 flex justify-center gap-2">
+                        <span id="reg-spinner" class="loader hidden border-white border-t-transparent"></span>
+                        Register
+                    </button>
+                </form>
+            </div>
+
+            <!-- 4. Find Donor Screen -->
+            <div id="find-donor-screen" class="screen">
+                <div class="mb-4 flex items-center gap-2">
+                    <button onclick="navigate('home-screen')" class="p-2 hover:bg-slate-100 rounded-full"><i class="bi bi-arrow-left"></i></button>
+                    <h2 class="text-xl font-bold">Find Donors</h2>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 space-y-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <select id="search-blood" class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none">
+                            <option value="">Blood Type</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                        </select>
+                        <select id="search-city" class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none">
+                            <option value="">City</option>
+                            <option value="New York">New York</option>
+                            <option value="Los Angeles">Los Angeles</option>
+                            <option value="Chicago">Chicago</option>
+                            <option value="Houston">Houston</option>
+                            <option value="Miami">Miami</option>
+                        </select>
+                    </div>
+                    <button onclick="searchDonors()" class="w-full bg-slate-900 text-white rounded-lg py-2 text-sm hover:bg-slate-800 transition flex justify-center">
+                         <span id="search-spinner" class="loader hidden border-white border-t-transparent mr-2"></span>
+                         Search
+                    </button>
+                </div>
+
+                <div id="donors-list" class="space-y-3">
+                    <!-- Donors injected here -->
+                    <div class="text-center text-slate-400 text-sm mt-8">Select filters to search</div>
+                </div>
+            </div>
+
+            <!-- 5. Emergency Request Screen -->
+            <div id="emergency-screen" class="screen">
+                <div class="mb-4 flex items-center gap-2">
+                    <button onclick="navigate('home-screen')" class="p-2 hover:bg-slate-100 rounded-full"><i class="bi bi-arrow-left"></i></button>
+                    <h2 class="text-xl font-bold text-red-600">Emergency Request</h2>
+                </div>
+
+                <form onsubmit="handleEmergencySubmit(event)" class="space-y-4 mb-8">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Patient Name</label>
+                        <input type="text" id="em-name" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm focus:border-red-500 focus:outline-none text-slate-900">
+                    </div>
+                     <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Required Blood</label>
+                            <select id="em-blood" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm focus:border-red-500 focus:outline-none">
+                                <option value="">Select</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Location/City</label>
+                            <select id="em-city" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm focus:border-red-500 focus:outline-none">
+                                <option value="">Select</option>
+                                <option value="New York">New York</option>
+                                <option value="Los Angeles">Los Angeles</option>
+                                <option value="Chicago">Chicago</option>
+                                <option value="Houston">Houston</option>
+                                <option value="Miami">Miami</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-red-600 text-white rounded-lg py-3 text-sm font-medium hover:bg-red-700 transition flex justify-center gap-2">
+                        <span id="em-spinner" class="loader hidden border-white border-t-transparent"></span>
+                        Broadcast Request
+                    </button>
+                </form>
+
+                <div id="em-results-container" class="hidden">
+                    <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wide mb-3">Matching Donors Found</h3>
+                    <div id="em-donors-list" class="space-y-3">
+                        <!-- Results injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. Chatbot Screen -->
+            <div id="chatbot-screen" class="screen h-full flex flex-col">
+                <div class="mb-2 flex items-center gap-2 shrink-0">
+                    <button onclick="navigate('home-screen')" class="p-2 hover:bg-slate-100 rounded-full"><i class="bi bi-arrow-left"></i></button>
+                    <h2 class="text-xl font-bold">AI Assistant</h2>
+                </div>
+                
+                <div id="chat-messages" class="flex-1 overflow-y-auto space-y-4 p-2 bg-slate-50 rounded-xl mb-4 border border-slate-100">
+                    <!-- Initial Message -->
+                    <div class="flex items-start gap-2 max-w-[85%]">
+                        <div class="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0 text-xs"><i class="bi bi-robot"></i></div>
+                        <div class="bg-white p-3 rounded-2xl rounded-tl-none border border-slate-200 shadow-sm text-sm text-slate-700">
+                            Hello! I can help you with blood donation info or how to use this app.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 shrink-0">
+                    <input type="text" id="chat-input" placeholder="Ask something..." class="flex-1 bg-white border border-slate-200 rounded-full px-4 py-3 text-sm focus:outline-none focus:border-red-500 shadow-sm">
+                    <button onclick="sendMessage()" class="bg-red-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-md hover:bg-red-700 transition">
+                        <i class="bi bi-send-fill text-sm"></i>
+                    </button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Logic -->
+    <script>
+        // Constants & Config
+        const APP_SLUG = 'blood-aid-minimal-v2-' + Math.floor(Math.random() * 10000); // Unique slug session
+        const API_BASE_MONGO = 'https://r0c8kgwocscg8gsokogwwsw4.zetaverse.one/mongodb';
+        const API_BASE_AI = 'https://r0c8kgwocscg8gsokogwwsw4.zetaverse.one/ai';
+        const AUTH_TOKEN = 'Bearer sW7otC9XDofgIwQGLkGRWdv6TjU2';
+
+        let currentUser = null;
+
+        // Navigation
+        function navigate(screenId) {
+            document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            
+            // Manage Logout button visibility
+            const logoutBtn = document.getElementById('logout-btn');
+            if (screenId === 'login-screen') {
+                logoutBtn.classList.add('hidden');
+            } else {
+                logoutBtn.classList.remove('hidden');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            navigate('login-screen');
+        }
+
+        // --- Database Helper --- (Simplified)
+        async function dbOperation(action, collection, data = {}, conditions = {}) {
+            try {
+                const response = await fetch(API_BASE_MONGO, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': AUTH_TOKEN,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        appSlug: APP_SLUG,
+                        action: action,
+                        collection: collection,
+                        data: data,
+                        conditions: conditions
+                    })
+                });
+                return await response.json();
+            } catch (error) {
+                console.error("DB Error:", error);
+                return { success: false };
+            }
+        }
+
+        // --- Auth Logic ---
+        async function handleAuth(type) {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            if (!email || !password) return alert('Please enter email and password');
+
+            const spinner = document.getElementById(type + '-spinner');
+            spinner.classList.remove('hidden');
+
+            if (type === 'signup') {
+                // Register User
+                const res = await dbOperation('create', 'users', { email, password });
+                if (res.success) {
+                    alert('Account created! Logging in...');
+                    currentUser = { email };
+                    navigate('home-screen');
+                } else {
+                    alert('Signup failed. Try again.');
+                }
+            } else {
+                // Login User
+                const res = await dbOperation('read', 'users', {}, { email, password });
+                if (res.success && res.result.read.length > 0) {
+                    currentUser = res.result.read[0];
+                    navigate('home-screen');
+                    // Reset fields
+                    document.getElementById('auth-email').value = '';
+                    document.getElementById('auth-password').value = '';
+                } else {
+                    alert('Invalid credentials.');
+                }
+            }
+            spinner.classList.add('hidden');
+        }
+
+        // --- Donor Registration ---
+        async function handleDonorSubmit(e) {
+            e.preventDefault();
+            const spinner = document.getElementById('reg-spinner');
+            spinner.classList.remove('hidden');
+
+            const data = {
+                fullName: document.getElementById('reg-name').value,
+                bloodGroup: document.getElementById('reg-blood').value,
+                city: document.getElementById('reg-city').value,
+                phone: document.getElementById('reg-phone').value,
+                registeredBy: currentUser?.email
+            };
+
+            const res = await dbOperation('create', 'donors', data);
+            
+            spinner.classList.add('hidden');
+            if (res.success) {
+                alert('Successfully registered as a donor!');
+                document.getElementById('reg-name').value = ''; 
+                document.getElementById('reg-phone').value = '';
+                navigate('home-screen');
+            } else {
+                alert('Failed to register. Please try again.');
+            }
+        }
+
+        // --- Find Donors ---
+        async function searchDonors() {
+            const blood = document.getElementById('search-blood').value;
+            const city = document.getElementById('search-city').value;
+            
+            if(!blood && !city) return alert("Please select at least one filter");
+
+            const spinner = document.getElementById('search-spinner');
+            spinner.classList.remove('hidden');
+            
+            const conditions = {};
+            if(blood) conditions.bloodGroup = blood;
+            if(city) conditions.city = city;
+
+            const res = await dbOperation('read', 'donors', {}, conditions);
+            
+            spinner.classList.add('hidden');
+            const list = document.getElementById('donors-list');
+            list.innerHTML = '';
+
+            if (res.success && res.result.read.length > 0) {
+                res.result.read.forEach(donor => {
+                    const card = `
+                        <div class="bg-white border border-slate-200 p-4 rounded-xl shadow-sm flex justify-between items-center">
+                            <div>
+                                <h4 class="font-bold text-slate-900">${donor.fullName}</h4>
+                                <p class="text-xs text-slate-500">${donor.city}</p>
+                            </div>
+                            <div class="text-right flex flex-col items-end gap-2">
+                                <span class="bg-red-100 text-red-600 text-xs font-bold px-2 py-1 rounded">${donor.bloodGroup}</span>
+                                <a href="tel:${donor.phone}" class="text-xs bg-slate-100 text-slate-700 px-3 py-1 rounded-full"><i class="bi bi-telephone-fill mr-1"></i> Call</a>
+                            </div>
+                        </div>
+                    `;
+                    list.innerHTML += card;
+                });
+            } else {
+                list.innerHTML = `<div class="text-center py-8 text-slate-500 bg-white rounded-xl border border-dashed border-slate-300">No donors found.</div>`;
+            }
+        }
+
+        // --- Emergency Request ---
+        async function handleEmergencySubmit(e) {
+            e.preventDefault();
+            const spinner = document.getElementById('em-spinner');
+            spinner.classList.remove('hidden');
+            document.getElementById('em-results-container').classList.add('hidden');
+
+            const reqData = {
+                patientName: document.getElementById('em-name').value,
+                bloodGroup: document.getElementById('em-blood').value,
+                city: document.getElementById('em-city').value,
+                status: 'open',
+                timestamp: new Date().toISOString()
+            };
+
+            // 1. Save Request
+            await dbOperation('create', 'requests', reqData);
+
+            // 2. Find Matching Donors automatically for UX
+            const res = await dbOperation('read', 'donors', {}, { 
+                bloodGroup: reqData.bloodGroup,
+                city: reqData.city
+            });
+
+            spinner.classList.add('hidden');
+            
+            // Show matches
+            const resultList = document.getElementById('em-donors-list');
+            resultList.innerHTML = '';
+            document.getElementById('em-results-container').classList.remove('hidden');
+
+            if (res.success && res.result.read.length > 0) {
+                res.result.read.forEach(donor => {
+                    const card = `
+                        <div class="bg-green-50 border border-green-200 p-4 rounded-xl shadow-sm flex justify-between items-center">
+                            <div>
+                                <h4 class="font-bold text-slate-900">${donor.fullName}</h4>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="bg-white text-green-700 text-[10px] font-bold px-2 py-0.5 rounded border border-green-200">MATCH</span>
+                                </div>
+                            </div>
+                            <a href="tel:${donor.phone}" class="bg-green-600 text-white w-10 h-10 rounded-full flex items-center justify-center shadow hover:bg-green-700">
+                                <i class="bi bi-telephone-fill"></i>
+                            </a>
+                        </div>
+                    `;
+                    resultList.innerHTML += card;
+                });
+            } else {
+                resultList.innerHTML = `<div class="p-4 bg-yellow-50 text-yellow-800 rounded-xl text-sm border border-yellow-200">Request Broadcasted. No exact matches found right now in your city.</div>`;
+            }
+            
+            // Clear input partially
+            document.getElementById('em-name').value = '';
+        }
+
+        // --- Chatbot ---
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            // UI Add User Message
+            addChatMessage(message, 'user');
+            input.value = '';
+
+            // AI loading placeholder
+            const loadingId = addChatMessage('Thinking...', 'ai', true);
+
+            // Fetch AI
+            try {
+                const response = await fetch(API_BASE_AI, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': AUTH_TOKEN,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        messages: [
+                            {
+                                role: "user",
+                                content: [
+                                    { type: "text", text: `You are a helpful assistant for a blood donation app. Answer briefly and kindly. User asks: ${message}` }
+                                ]
+                            }
+                        ]
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // Remove loading, add actual response
+                document.getElementById(loadingId).remove();
+                addChatMessage(data.message || "I couldn't process that. Please try again.", 'ai');
+
+            } catch (err) {
+                document.getElementById(loadingId).remove();
+                addChatMessage("Sorry, I'm having trouble connecting right now.", 'ai');
+            }
+        }
+
+        function addChatMessage(text, sender, isLoading = false) {
+            const container = document.getElementById('chat-messages');
+            const id = 'msg-' + Date.now();
+            
+            let contentHtml = '';
+            if (sender === 'user') {
+                contentHtml = `
+                    <div class="flex items-start gap-2 max-w-[85%] self-end flex-row-reverse ml-auto" id="${id}">
+                        <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center shrink-0 text-xs"><i class="bi bi-person-fill"></i></div>
+                        <div class="bg-red-600 text-white p-3 rounded-2xl rounded-tr-none shadow-sm text-sm">
+                            ${text}
+                        </div>
+                    </div>
+                `;
+            } else {
+                contentHtml = `
+                    <div class="flex items-start gap-2 max-w-[85%]" id="${id}">
+                        <div class="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0 text-xs"><i class="bi bi-robot"></i></div>
+                        <div class="bg-white p-3 rounded-2xl rounded-tl-none border border-slate-200 shadow-sm text-sm text-slate-700 ${isLoading ? 'animate-pulse' : ''}">
+                            ${text}
+                        </div>
+                    </div>
+                `;
+            }
+            container.insertAdjacentHTML('beforeend', contentHtml);
+            container.scrollTop = container.scrollHeight;
+            return id;
+        }
+        
+        // Enter key for chat
+        document.getElementById('chat-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
